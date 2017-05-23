@@ -10,7 +10,7 @@ npm install fileuploadaddin --save
 ## 例子
 ```
 var fs = require('fs');
-var ful = require('./fileUploadAPI/ful').fileUpload;
+var ful = require('fileuploadaddin').fileUpload;
 //这里使用了 express 框架
 router.post('/upFile',function(req,res) {
   ful.add(req,res);
