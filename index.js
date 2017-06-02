@@ -77,6 +77,7 @@ var fileUpload = (function(){
 
         form.parse(req, function(err, fields, files) {
             if (err) {
+                deleteFile(files);
                 if (errHandle) {
                     errHandle(err,res);
                 } else {
@@ -92,6 +93,7 @@ var fileUpload = (function(){
             for (var i = 0;i < fieldsName.length;i++) {
                 var ret = fieldHandle(fields[fieldsName[i]],fieldsName[i],fieldsName[i]);
                 if (ret) {
+                    deleteFile(files);
                     fieldHandleOccurError(res,fieldsName[i],ret,fieldsName[i]);
                     return;
                 }
@@ -112,6 +114,7 @@ var fileUpload = (function(){
                 }
             }
 
+            deleteFile(files);
             if (successHandle) {
                 successHandle(res);
             } else {
@@ -123,19 +126,19 @@ var fileUpload = (function(){
         if (curFn) {
             if (curFn instanceof Function) {
                 return function (a,b) {
-                    curFn(a,b);
+                    return curFn(a,b);
                 }
             } else  if (curFn instanceof Object) {
                 return function (a,b,c) {
                     if (curFn[c]) {
-                        curFn[c](a,b);
+                        return curFn[c](a,b);
                     } else {
-                        defaultFn(a,b);
+                        return defaultFn(a,b);
                     }
                 }
             } else {
                 return function (a,b) {
-                    defaultFn(a,b);
+                    return defaultFn(a,b);
                 }
             }
         } else {
@@ -160,6 +163,22 @@ var fileUpload = (function(){
     };
     var defaultFieldHandleOccurErrorHandle = function(res,field,ret) {
         res.json({error : "处理字段" + field + "时，发生错误！\n错误信息为：" + ret});
+    };
+    var deleteFile = function(files) {
+        for (var i in files) {
+            var f = files[i];
+            if (f instanceof Array) {
+                for (var j = 0;j < f.length;j++) {
+                    fs.exists(f[j].path,function() {
+                        fs.unlinkSync(f[j].path);
+                    });
+                }
+            } else {
+                fs.exists(f.path,function() {
+                    fs.unlinkSync(f.path);
+                });
+            }
+        }
     };
     return {
         add : add,
