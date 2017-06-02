@@ -14,7 +14,8 @@ var fileUpload = (function(){
         keepExtensions : true,
         maxFieldsSize : 2 * 1024,   // 2 kb
         fileNames : ['file1'],
-        fieldsNames : []
+        fieldsNames : [],
+        multiples : true
     };
     /**
      * obj 为 form 的默认参数
@@ -39,6 +40,7 @@ var fileUpload = (function(){
         form.fieldsNames = obj.fieldsNames ? obj.fieldsNames : defaultSetting.fieldsNames;
         filesName = form.fileNames;
         fieldsName = form.fieldsNames;
+        form.multiples = obj.multiples ? obj.multiples : false;
     };
     /**
      * 标记 * 表示函数有返回值并可能会被使用而影响程序正常运行
@@ -99,7 +101,14 @@ var fileUpload = (function(){
             uploadHandle = autoSelectHandle(uploadHandle,this_.defaultUploadHandle);
             for (var i = 0;i < filesName.length;i++) {
                 if (files[filesName[i]]) {
-                    uploadHandle(form,files[filesName[i]],filesName[i]);
+                    if (files[filesName[i]] instanceof Array) {
+                        var files_ = files[filesName[i]];
+                        for (var j = 0;j < files_.length;j++) {
+                            uploadHandle(form,files_[j],filesName[i]);
+                        }
+                    } else {
+                        uploadHandle(form,files[filesName[i]],filesName[i]);
+                    }
                 }
             }
 
@@ -139,7 +148,7 @@ var fileUpload = (function(){
         res.json(err);
     };
     var defaultUploadHandle = function(form,file) {
-        var newPath = form.uploadDir + file.name;
+        var newPath = form.uploadDir + (new Date()).getTime() + "_" + file.name;
         console.log(newPath);
         fs.renameSync(file.path, newPath);  //重命名
     };
