@@ -76,8 +76,20 @@ var fileUpload = (function(){
         var this_ = this;
 
         form.parse(req, function(err, fields, files) {
+            var fileList = {};
+            for (var i in files) {
+                var fl = files[i];
+                if (fl instanceof Array) {
+                    fl.forEach(function(j) {
+                        fileList[j.path] = 1;
+                    });
+                } else {
+                    fileList[fl.path] = 1;
+                }
+            }
+
             if (err) {
-                deleteFile(files);
+                deleteFile(fileList);
                 if (errHandle) {
                     errHandle(err,res);
                 } else {
@@ -93,7 +105,7 @@ var fileUpload = (function(){
             for (var i = 0;i < fieldsName.length;i++) {
                 var ret = fieldHandle(fields[fieldsName[i]],fieldsName[i],fieldsName[i]);
                 if (ret) {
-                    deleteFile(files);
+                    deleteFile(fileList);
                     fieldHandleOccurError(res,fieldsName[i],ret,fieldsName[i]);
                     return;
                 }
@@ -103,18 +115,20 @@ var fileUpload = (function(){
             uploadHandle = autoSelectHandle(uploadHandle,this_.defaultUploadHandle);
             for (var i = 0;i < filesName.length;i++) {
                 if (files[filesName[i]]) {
-                    if (files[filesName[i]] instanceof Array) {
-                        var files_ = files[filesName[i]];
+                    var files_ = files[filesName[i]];
+                    if (files_ instanceof Array) {
                         for (var j = 0;j < files_.length;j++) {
                             uploadHandle(form,files_[j],filesName[i]);
+                            fileList[files_[j].path] = 0;
                         }
                     } else {
-                        uploadHandle(form,files[filesName[i]],filesName[i]);
+                        uploadHandle(form,files_,filesName[i]);
+                        fileList[files_.path] = 0;
                     }
                 }
             }
 
-            deleteFile(files);
+            deleteFile(fileList);
             if (successHandle) {
                 successHandle(res);
             } else {
@@ -166,16 +180,9 @@ var fileUpload = (function(){
     };
     var deleteFile = function(files) {
         for (var i in files) {
-            var f = files[i];
-            if (f instanceof Array) {
-                for (var j = 0;j < f.length;j++) {
-                    fs.exists(f[j].path,function() {
-                        fs.unlinkSync(f[j].path);
-                    });
-                }
-            } else {
-                fs.exists(f.path,function() {
-                    fs.unlinkSync(f.path);
+            if (files[i]) {
+                fs.exists(i,function() {
+                    fs.unlinkSync(i);
                 });
             }
         }
